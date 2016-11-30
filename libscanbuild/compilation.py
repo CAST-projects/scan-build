@@ -249,8 +249,6 @@ class Compilation:
                 count = IGNORED_FLAGS[arg]
                 for _ in range(count):
                     next(args)
-            elif re.match(r'^-(l|L|Wl,).+', arg):
-                pass
             # some parameters could look like filename, take as compile option
             elif arg in {'-D', '-I'}:
                 result.flags.extend([arg, next(args)])
