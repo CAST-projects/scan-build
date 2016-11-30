@@ -71,6 +71,10 @@ COMPILER_PATTERNS_CXX = frozenset([
     re.compile(r'^(g|)xl(C|c\+\+)$'),
 ])
 
+AR_PATTERNS = frozenset([
+    re.compile(r'^([^-]*-)?ar$'),
+])
+
 CompilationCommand = collections.namedtuple(
     'CompilationCommand', ['compiler', 'flags', 'files'])
 
@@ -123,7 +127,7 @@ class Compilation:
         """ This method creates a compilation database entry. """
 
         relative = os.path.relpath(self.source, self.directory)
-        compiler = 'cc' if self.compiler == 'c' else 'c++'
+        compiler = 'ar' if self.compiler == 'ar' else ('cc' if self.compiler == 'c' else 'c++')
         return {
             'file': relative,
             'arguments': [compiler, '-c'] + self.flags + [relative],
@@ -187,6 +191,9 @@ class Compilation:
             return os.path.basename(cxx) == cmd or \
                 any(pattern.match(cmd) for pattern in COMPILER_PATTERNS_CXX)
 
+        def is_ar(cmd):
+            return 'ar' == cmd or any(pattern.match(cmd) for pattern in AR_PATTERNS)
+
         if command:  # not empty list will allow to index '0' and '1:'
             executable = os.path.basename(command[0])
             parameters = command[1:]
@@ -201,6 +208,8 @@ class Compilation:
                 return 'c', parameters
             elif is_cxx_compiler(executable):
                 return 'c++', parameters
+            elif is_ar(executable):
+                return 'ar', parameters
         return None
 
     @staticmethod
@@ -222,8 +231,15 @@ class Compilation:
         result = CompilationCommand(compiler=compiler_and_arguments[0],
                                     flags=[],
                                     files=[])
+        is_ar = True if compiler_and_arguments[0] == 'ar' else False
         # iterate on the compile options
         args = iter(compiler_and_arguments[1])
+        if is_ar:
+            for arg in args:
+                if arg == 'r':
+                    result.files.append(next(args))
+                else:
+                    result.flags.append(arg)
         for arg in args:
             # quit when compilation pass is not involved
             if arg in {'-E', '-S', '-cc1', '-M', '-MM', '-###'}:

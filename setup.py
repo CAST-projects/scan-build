@@ -25,7 +25,8 @@ setup(
             'analyze-c++ = libscanbuild.analyze:analyze_build_wrapper',
             'intercept-build = libscanbuild.intercept:intercept_build_main',
             'intercept-cc = libscanbuild.intercept:intercept_build_wrapper',
-            'intercept-c++ = libscanbuild.intercept:intercept_build_wrapper'
+            'intercept-c++ = libscanbuild.intercept:intercept_build_wrapper',
+            'intercept-ar = libscanbuild.intercept:intercept_build_wrapper'
         ]
     },
     classifiers=[

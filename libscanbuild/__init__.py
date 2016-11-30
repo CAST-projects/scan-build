@@ -165,7 +165,11 @@ def wrapper_entry_point(function):
         # have `.exe` extension on windows)
         wrapper_command = os.path.basename(sys.argv[0])
         is_cxx = re.match(r'(.+)c\+\+(.*)', wrapper_command)
-        real_compiler = parameters['cxx'] if is_cxx else parameters['cc']
+        is_ar = re.match(r'.*ar$', wrapper_command)
+        if is_ar:
+            real_compiler = ['ar']
+        else:
+            real_compiler = parameters['cxx'] if is_cxx else parameters['cc']
         # execute compilation with the real compiler
         command = real_compiler + sys.argv[1:]
         logging.debug('compilation: %s', command)
@@ -176,7 +180,7 @@ def wrapper_entry_point(function):
             call = Execution(
                 pid=os.getpid(),
                 cwd=os.getcwd(),
-                cmd=['c++' if is_cxx else 'cc'] + sys.argv[1:])
+                cmd=['ar' if is_ar else ('c++' if is_cxx else 'cc')] + sys.argv[1:])
             function(execution=call, result=result)
         except:
             logging.exception('Compiler wrapper failed complete.')
