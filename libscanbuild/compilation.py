@@ -72,7 +72,11 @@ COMPILER_PATTERNS_CXX = frozenset([
 ])
 
 AR_PATTERNS = frozenset([
-    re.compile(r'^([^-]*-)?ar$'),
+    re.compile(r'^([^-]*-)*ar$'),
+])
+
+AR_RFLAG_PATTERNS = frozenset([
+    re.compile(r'^r[a-zA-Z]{0,3}$'),
 ])
 
 CompilationCommand = collections.namedtuple(
@@ -127,10 +131,11 @@ class Compilation:
         """ This method creates a compilation database entry. """
 
         relative = os.path.relpath(self.source, self.directory)
-        compiler = 'ar' if self.compiler == 'ar' else ('cc' if self.compiler == 'c' else 'c++')
+        is_ar = self.compiler == 'ar'
+        compiler = 'ar' if is_ar else ('cc' if self.compiler == 'c' else 'c++')
         return {
             'file': relative,
-            'arguments': [compiler, '-c'] + self.flags + [relative],
+            'arguments': ([compiler] if is_ar else [compiler, '-c']) + self.flags + [relative],
             'directory': self.directory
         }
 
@@ -236,31 +241,32 @@ class Compilation:
         args = iter(compiler_and_arguments[1])
         if is_ar:
             for arg in args:
-                if arg == 'r':
+                if any(pattern.match(arg) for pattern in AR_RFLAG_PATTERNS):
                     result.files.append(next(args))
                 else:
                     result.flags.append(arg)
-        for arg in args:
-            # quit when compilation pass is not involved
-            if arg in {'-E', '-S', '-cc1', '-M', '-MM', '-###'}:
-                return None
-            # ignore some flags
-            elif arg in IGNORED_FLAGS:
-                count = IGNORED_FLAGS[arg]
-                for _ in range(count):
-                    next(args)
-            # some parameters could look like filename, take as compile option
-            elif arg in {'-D', '-I'}:
-                result.flags.extend([arg, next(args)])
-            # parameter which looks source file is taken...
-            elif re.match(r'^[^-].+', arg) and classify_source(arg):
-                result.files.append(arg)
-            # and consider everything else as compile option.
-            else:
-                result.flags.append(arg)
+        else:
+            for arg in args:
+                # quit when compilation pass is not involved
+                if arg in {'-E', '-S', '-cc1', '-M', '-MM', '-###'}:
+                    return None
+                # ignore some flags
+                elif arg in IGNORED_FLAGS:
+                    count = IGNORED_FLAGS[arg]
+                    for _ in range(count):
+                        next(args)
+                # some parameters could look like filename, take as compile option
+                elif arg in {'-D', '-I'}:
+                    result.flags.extend([arg, next(args)])
+                # parameter which looks source file is taken...
+                elif re.match(r'^[^-].+', arg) and classify_source(arg):
+                    result.files.append(arg)
+                # and consider everything else as compile option.
+                else:
+                    result.flags.append(arg)
         logging.debug('output is: %s', result)
         # do extra check on number of source files
-        return result if result.files else None
+        return result if (result.files or is_ar) else None
 
 
 class CompilationDatabase:
