@@ -35,7 +35,7 @@ How to install
 
 Check out the sources (or download them using "Clone or download" above)
 cd to the directory where the sources reside then run following command
-lines
+lines::
 
     $ python ./setup.py build
     running build
@@ -51,7 +51,7 @@ lines
     .......
 
 If you do not have the rights to install to system directories or
-if you don't want to, run
+if you don't want to, run::
 
     $ python ./setup.py install --user
 
