@@ -30,15 +30,32 @@ the build, as well as scan-build tool, which logs the build and runs
 the clang static analyzer on it.
 
 
-How to get
-----------
+How to install
+--------------
 
-It's available from `the Python Package Index`_ ::
+Check out the sources (or download them using "Clone or download" above)
+cd to the directory where the sources reside then run following command
+lines
 
-    $ pip install scan-build
+    $ python ./setup.py build
+    running build
+    running build_py
+    copying libscanbuild/compilation.py -> build/lib/libscanbuild
+    .....
 
-Or check out the sources and add the directory ``bin`` to your ``PATH`` environment.
+    $ python ./setup.py install
+    running install
+    running bdist_egg
+    running egg_info
+    writing scan_build.egg-info/PKG-INFO
+    .......
 
+If you do not have the rights to install to system directories or
+if you don't want to, run
+
+    $ python ./setup.py install --user
+
+instead.
 
 Portability
 -----------
