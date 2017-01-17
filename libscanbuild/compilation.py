@@ -76,7 +76,7 @@ AR_PATTERNS = frozenset([
 ])
 
 AR_RFLAG_PATTERNS = frozenset([
-    re.compile(r'^r[a-zA-Z]{0,3}$'),
+    re.compile(r'^((r|q|c|[sS]|d|[tT])[a-zA-Z]{0,3})$'),
 ])
 
 CompilationCommand = collections.namedtuple(
@@ -184,6 +184,8 @@ class Compilation:
         :param cxx:         user specified C++ compiler name
         :return: None if the command is not a compilation, or a tuple
                 (compiler_language, rest of the command) otherwise """
+
+        logging.debug('Command received by _split_compiler: {0:s}'.format(str(command)))
 
         def is_wrapper(cmd):
             return True if COMPILER_PATTERN_WRAPPER.match(cmd) else False
