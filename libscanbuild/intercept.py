@@ -61,6 +61,36 @@ def intercept_build_main():
 
     return exit_code
 
+def recognize_config(conf_output):
+    dict = {'include_paths' : []}
+    eat = False
+    for l in conf_output:
+        if (l.startswith('#include "..." search starts here')
+            or l.startswith('#include <...> search starts here')):
+            eat = True
+            continue
+        if (l == 'End of search list.'):
+            eat = False
+        if eat:
+            dict['include_paths'].append(l.strip())
+    return dict
+
+def find_compiler_config(compiler, tmp_file_name, tmp_dir):
+    filePath = os.path.join(tmp_dir, tmp_file_name)
+    with open(filePath, 'w'):
+        pass
+    config_output = run_command([compiler,'-E', '-v', tmp_file_name], cwd=tmp_dir)
+    logging.debug('config_output is %s' % config_output)
+    compiler_conf = recognize_config(config_output)
+    logging.debug('Recognized config: %s' % compiler_conf)
+    return compiler_conf
+
+def write_compiler_config(args, tmp_dir):
+    # Find C/C++ compilers default configuration
+    cc_conf = find_compiler_config(args.cc, 'a.c', tmp_dir)
+    cxx_conf = find_compiler_config(args.cxx, 'a.cpp', tmp_dir)
+    with open('compile_config.json', 'w') as handle:
+        json.dump({'cc':cc_conf, 'cxx':cxx_conf}, handle, sort_keys=True, indent=4)
 
 def capture(args):
     """ Implementation of compilation database generation.
@@ -71,6 +101,7 @@ def capture(args):
     with temporary_directory(prefix='intercept-', dir=tempdir()) as tmp_dir:
         # run the build command
         environment = setup_environment(args, tmp_dir)
+        write_compiler_config(args, tmp_dir)
         exit_code = run_build(args.build, env=environment)
         # read the intercepted exec calls
         calls = (parse_exec_trace(file) for file in exec_trace_files(tmp_dir))
