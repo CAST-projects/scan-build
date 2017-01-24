@@ -62,17 +62,24 @@ def intercept_build_main():
     return exit_code
 
 def recognize_config(conf_output):
-    dict = {'include_paths' : []}
-    eat = False
+    dict = {'name' : None, 'version' : None, 'include_paths' : []}
+    ver_re = re.compile(r'^((.*)cc) [vV][eE][rR][sS][iI][oO][nN] (([0-9]\.)+[0-9])')
+    eatIncPath = False
     for l in conf_output:
         if (l.startswith('#include "..." search starts here')
             or l.startswith('#include <...> search starts here')):
-            eat = True
+            eatIncPath = True
             continue
         if (l == 'End of search list.'):
-            eat = False
-        if eat:
+            eatIncPath = False
+            continue
+        if eatIncPath:
             dict['include_paths'].append(l.strip())
+            continue
+        m = ver_re.search(l)
+        if m:
+            dict['name'] = m.group(1)
+            dict['version'] = m.group(3)
     return dict
 
 def find_compiler_config(compiler, tmp_file_name, tmp_dir):
