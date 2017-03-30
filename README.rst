@@ -70,6 +70,7 @@ Prerequisites
 
 1. **clang compiler**, to compile the sources and have the static analyzer (not
 needed if you use the package only for generating compilation databases).
+
 2. **python** interpreter (version 2.7, 3.3, 3.4, 3.5).
 
 
