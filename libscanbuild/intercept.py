@@ -61,9 +61,19 @@ def intercept_build_main():
 
     return exit_code
 
+def parseDefine(str, define_re):
+    str = str.lstrip('#define ')
+    m = define_re.search(str)
+    if m:
+        define_name = m.group(1)
+        define_value = m.group(5) if m.group(5) else ''
+        return [define_name, define_value]
+    return None
+
 def recognize_config(conf_output):
-    dict = {'name' : None, 'version' : None, 'include_paths' : []}
+    dict = {'name' : None, 'version' : None, 'include_paths' : [], 'defines' : []}
     ver_re = re.compile(r'^((.*)cc) [vV][eE][rR][sS][iI][oO][nN] (([0-9]\.)+[0-9])')
+    define_re = re.compile(r'^(\b(_\w+|(?![0-9_])\w*)\b(\(.*?\))?)([ \t]+(.*?))?$')
     eatIncPath = False
     for l in conf_output:
         if (l.startswith('#include "..." search starts here')
@@ -76,6 +86,10 @@ def recognize_config(conf_output):
         if eatIncPath:
             dict['include_paths'].append(l.strip())
             continue
+        if (l.startswith('#define ')):
+            defineDefinition = parseDefine(l, define_re)
+            if defineDefinition:
+                dict['defines'].append({'name':defineDefinition[0], 'value':defineDefinition[1]})
         m = ver_re.search(l)
         if m:
             dict['name'] = m.group(1)
@@ -86,7 +100,7 @@ def find_compiler_config(compiler, tmp_file_name, tmp_dir):
     filePath = os.path.join(tmp_dir, tmp_file_name)
     with open(filePath, 'w'):
         pass
-    config_output = run_command([compiler,'-E', '-v', tmp_file_name], cwd=tmp_dir)
+    config_output = run_command([compiler,'-E', '-dM', '-v', tmp_file_name], cwd=tmp_dir)
     logging.debug('config_output is %s' % config_output)
     compiler_conf = recognize_config(config_output)
     logging.debug('Recognized config: %s' % compiler_conf)
