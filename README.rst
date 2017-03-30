@@ -68,7 +68,8 @@ Should be working on UNIX operating systems.
 Prerequisites
 -------------
 
-1. **clang compiler**, to compile the sources and have the static analyzer.
+1. **clang compiler**, to compile the sources and have the static analyzer (not
+needed if you use the package only for generating compilation databases).
 2. **python** interpreter (version 2.7, 3.3, 3.4, 3.5).
 
 
@@ -82,6 +83,11 @@ To run the Clang static analyzer against a project goes like this::
 To generate a compilation database file goes like this::
 
     $ intercept-build <your build command>
+
+this generates a compile_commands.json in the folder where it was run.
+A file compile_config.json is also generated, this file contains information
+about the compiler used (compiler name and version, default include paths
+and macros, etc...).
 
 To run the Clang static analyzer against a project with compilation database
 goes like this::
@@ -118,11 +124,12 @@ tool has three distinct model to run the analyzer:
     this model.
 
 The 1. and 3. are using compiler wrappers, which works only if the build
-process respects the ``CC`` and ``CXX`` environment variables. (Some build
-process can override these variable as command line parameter only. This case
-you need to pass the compiler wrappers manually. eg.: ``intercept-build
---override-compiler make CC=intercept-cc CXX=intercept-c++ all`` where the
-original build command would have been ``make all`` only.)
+process respects the ``CC``, ``CXX`` and ``AR`` environment variables.
+(Some build process can override these variable as command line parameter
+only. This case you need to pass the compiler wrappers manually. eg.:
+``intercept-build --override-compiler make CC=intercept-cc
+CXX=intercept-c++ AR=intercept-ar all`` where the original build command
+would have been ``make all`` only.)
 
 The 1. runs the analyzer right after the real compilation. So, if the build
 process removes removes intermediate modules (generated sources) the analyzer
