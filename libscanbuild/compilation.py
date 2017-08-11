@@ -266,7 +266,21 @@ class Compilation:
                 # and consider everything else as compile option.
                 else:
                     result.flags.append(arg)
-        logging.debug('output is: %s', result)
+        if not result.files and not is_ar:
+            # see whether we missed a link command line
+            args = iter(compiler_and_arguments[1])
+            filesTmp = []
+            isLinkCmd = False
+            for arg in args:
+                if arg in {'-o'}:
+                    filesTmp.append(next(args))
+                elif re.match(r'-Wl,.+', arg) or re.match(r'^[^-].*\.o', arg):
+                    isLinkCmd = True
+            if isLinkCmd:
+                logging.debug('Link command line encountered')
+                for f in filesTmp:
+                    result.files.append(f)
+        logging.debug('Output is: %s', result)
         # do extra check on number of source files
         return result if (result.files or is_ar) else None
 
