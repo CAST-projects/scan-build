@@ -132,10 +132,14 @@ class Compilation:
 
         relative = os.path.relpath(self.source, self.directory)
         is_ar = self.compiler == 'ar'
-        compiler = 'ar' if is_ar else ('cc' if self.compiler == 'c' else 'c++')
+        is_link = self.compiler == 'ld'
+        if is_link:
+            compiler = 'ld'
+        else:
+            compiler = 'ar' if is_ar else ('cc' if self.compiler == 'c' else 'c++')
         return {
             'file': relative,
-            'arguments': ([compiler] if is_ar else [compiler, '-c']) + self.flags + [relative],
+            'arguments': ([compiler] if (is_ar or is_link) else [compiler, '-c']) + self.flags + [relative],
             'directory': self.directory
         }
 
@@ -278,6 +282,7 @@ class Compilation:
                     isLinkCmd = True
             if isLinkCmd:
                 logging.debug('Link command line encountered')
+                result = CompilationCommand(compiler = 'ld', flags=result.flags, files=result.files)
                 for f in filesTmp:
                     result.files.append(f)
         logging.debug('Output is: %s', result)
