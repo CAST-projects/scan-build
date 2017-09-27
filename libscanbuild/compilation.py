@@ -132,10 +132,14 @@ class Compilation:
 
         relative = os.path.relpath(self.source, self.directory)
         is_ar = self.compiler == 'ar'
-        compiler = 'ar' if is_ar else ('cc' if self.compiler == 'c' else 'c++')
+        is_link = self.compiler == 'ld'
+        if is_link:
+            compiler = 'ld'
+        else:
+            compiler = 'ar' if is_ar else ('cc' if self.compiler == 'c' else 'c++')
         return {
             'file': relative,
-            'arguments': ([compiler] if is_ar else [compiler, '-c']) + self.flags + [relative],
+            'arguments': ([compiler] if (is_ar or is_link) else [compiler, '-c']) + self.flags + [relative],
             'directory': self.directory
         }
 
@@ -266,7 +270,22 @@ class Compilation:
                 # and consider everything else as compile option.
                 else:
                     result.flags.append(arg)
-        logging.debug('output is: %s', result)
+        if not result.files and not is_ar:
+            # see whether we missed a link command line
+            args = iter(compiler_and_arguments[1])
+            filesTmp = []
+            isLinkCmd = False
+            for arg in args:
+                if arg in {'-o'}:
+                    filesTmp.append(next(args))
+                elif re.match(r'-Wl,.+', arg) or re.match(r'^[^-].*\.o', arg):
+                    isLinkCmd = True
+            if isLinkCmd:
+                logging.debug('Link command line encountered')
+                result = CompilationCommand(compiler = 'ld', flags=result.flags, files=result.files)
+                for f in filesTmp:
+                    result.files.append(f)
+        logging.debug('Output is: %s', result)
         # do extra check on number of source files
         return result if (result.files or is_ar) else None
 
