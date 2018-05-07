@@ -50,6 +50,10 @@ lines::
     writing scan_build.egg-info/PKG-INFO
     .......
 
+If you have the admin rights, please try the following commands
+
+    $ sudo python ./setup.py install
+
 If you do not have the rights to install to system directories or
 if you don't want to, run::
 
